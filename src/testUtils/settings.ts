@@ -1,3 +1,5 @@
+import type { ILocaleOverride, IWeekStartOption } from "obsidian-calendar-ui";
+
 import type { ISettings } from "src/settings";
 
 export function getDefaultSettings(
@@ -6,13 +8,14 @@ export function getDefaultSettings(
   return Object.assign(
     {},
     {
-      weekStart: "sunday",
+      weekStart: "sunday" as IWeekStartOption,
       shouldConfirmBeforeCreate: false,
       wordsPerDot: 50,
       showWeeklyNote: false,
       weeklyNoteFolder: "",
       weeklyNoteFormat: "",
       weeklyNoteTemplate: "",
+      localeOverride: "system-default" as ILocaleOverride,
     },
     overrides
   );

@@ -1,19 +1,18 @@
-import type { Moment, WeekSpec } from "moment";
-import { App, Plugin, WorkspaceLeaf } from "obsidian";
+import type { WeekSpec } from "moment";
+import { Plugin, type App, type WorkspaceLeaf } from "obsidian";
 
 import { VIEW_TYPE_CALENDAR } from "./constants";
 import { settings } from "./ui/stores";
 import {
   appHasPeriodicNotesPluginLoaded,
   CalendarSettingsTab,
-  ISettings,
+  type ISettings,
 } from "./settings";
 import CalendarView from "./view";
 
 declare global {
   interface Window {
     app: App;
-    moment: () => Moment;
     _bundledLocaleWeekSpec: WeekSpec;
   }
 }
@@ -74,13 +73,7 @@ export default class CalendarPlugin extends Plugin {
 
     this.addSettingTab(new CalendarSettingsTab(this.app, this));
 
-    if (this.app.workspace.layoutReady) {
-      this.initLeaf();
-    } else {
-      this.registerEvent(
-        this.app.workspace.on("layout-ready", this.initLeaf.bind(this))
-      );
-    }
+    this.app.workspace.onLayoutReady(this.initLeaf.bind(this));
   }
 
   initLeaf(): void {

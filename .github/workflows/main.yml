@@ -2,21 +2,28 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
 
       - name: Install modules
-        run: yarn
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: yarn run lint
+        run: pnpm run lint
 
       - name: Run tests
-        run: yarn run test
+        run: pnpm run test

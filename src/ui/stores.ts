@@ -5,7 +5,7 @@ import {
 } from "obsidian-daily-notes-interface";
 import { writable } from "svelte/store";
 
-import { defaultSettings, ISettings } from "src/settings";
+import { defaultSettings, type ISettings } from "src/settings";
 
 import { getDateUIDFromFile } from "./utils";
 
