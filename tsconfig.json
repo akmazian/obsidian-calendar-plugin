@@ -7,7 +7,7 @@
     // @tsconfig/svelte v5 enables `strict`; keep it off for now so the
     // dependency upgrade doesn't also require a type-safety refactor.
     "strict": false,
-    "types": ["node", "svelte", "jest"],
+    "types": ["node", "svelte"],
     "paths": {
       "src/*": ["./src/*"]
     }

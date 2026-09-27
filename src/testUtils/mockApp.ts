@@ -37,7 +37,7 @@ const mockApp: App = {
       path: "",
       vault: null,
     }),
-    create: jest.fn(),
+    create: () => Promise.resolve(null),
     createFolder: () => Promise.resolve(null),
     createBinary: () => Promise.resolve(null),
     read: () => Promise.resolve(""),
