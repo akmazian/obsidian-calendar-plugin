@@ -4,7 +4,7 @@ An Obsidian plugin that shows a calendar of your daily and weekly notes. It's a 
 
 - `origin` is `akmazian/obsidian-calendar-plugin` (this fork, default branch `main`). `upstream` is liamcain's repo (branch `master`, abandoned).
 - Plugin id is `calendar-revived`, name "Calendar Revived", author "Akmazian, adapted from Liam Cain". The first fork release was **1.6.0** (2026-09-27), with `minAppVersion` 1.7.2.
-- When running `gh pr create` in this fork, always pass `--repo akmazian/obsidian-calendar-plugin`. Otherwise `gh` targets the upstream repo.
+- **No PRs.** There's one maintainer, so commit directly to `main` and push, in small commits split by concern. CI on `main` is the check. If you do use `gh` against this fork (issues, releases, runs), pass `--repo akmazian/obsidian-calendar-plugin`, because otherwise it may target the upstream repo.
 
 ## Commands
 
@@ -19,7 +19,7 @@ pnpm exec rollup -c    # build main.js only
 pnpm run build         # lint, then build
 ```
 
-CI (`.github/workflows/main.yml`, Node 22) runs lint, test and build on every push and PR to `main`. Run the same three commands locally before pushing.
+CI (`.github/workflows/main.yml`, Node 22) runs lint, test and build on every push to `main`. Run the same three commands locally before pushing.
 
 ## Layout
 
@@ -53,7 +53,7 @@ CI (`.github/workflows/main.yml`, Node 22) runs lint, test and build on every pu
 - **Don't detach leaves in `onunload`**, per Obsidian's plugin guidelines.
 - **Keep the identifiers distinct from the original plugin:** the view type is `"calendar-revived"`, so both plugins can be installed at once. Keep the `calendar:open` event name unchanged, because other plugins listen for it.
 - **Match the existing style:** 2-space indent, double quotes, trailing commas, lines of about 80 characters. There's no Prettier config, so follow the surrounding code.
-- **Commit messages:** an imperative subject line, then a body explaining *why*. Split changes into commits by concern.
+- **Commit messages:** an imperative subject line, then a body explaining *why*. Split changes into commits by concern, and commit straight to `main`.
 
 ## Things not to "fix"
 
@@ -88,7 +88,7 @@ CI (`.github/workflows/main.yml`, Node 22) runs lint, test and build on every pu
 ## Releasing
 
 1. Bump the version in `manifest.json`, `package.json` and `versions.json`. `versions.json` maps each plugin version to its `minAppVersion`.
-2. Merge to `main` through a PR, once CI is green.
+2. Commit and push to `main`, and wait for CI to go green.
 3. Tag `main` with exactly the version number, with no `v` prefix, and push the tag: `git tag 1.6.1 && git push origin 1.6.1`.
 4. `.github/workflows/publish.yml` checks that the tag equals the manifest version, runs lint, tests and build, then publishes a GitHub release with `main.js`, `manifest.json` and `styles.css`.
 
