@@ -11,6 +11,7 @@ import {
   ItemView,
   type HoverParent,
   type HoverPopover,
+  type TAbstractFile,
   type TFile,
   type WorkspaceLeaf,
 } from "obsidian";
@@ -48,6 +49,7 @@ export default class CalendarView extends ItemView implements HoverParent {
     this.onNoteSettingsUpdate = this.onNoteSettingsUpdate.bind(this);
     this.onFileCreated = this.onFileCreated.bind(this);
     this.onFileDeleted = this.onFileDeleted.bind(this);
+    this.onFileRenamed = this.onFileRenamed.bind(this);
     this.onFileModified = this.onFileModified.bind(this);
     this.onFileOpen = this.onFileOpen.bind(this);
 
@@ -66,6 +68,7 @@ export default class CalendarView extends ItemView implements HoverParent {
     );
     this.registerEvent(this.app.vault.on("create", this.onFileCreated));
     this.registerEvent(this.app.vault.on("delete", this.onFileDeleted));
+    this.registerEvent(this.app.vault.on("rename", this.onFileRenamed));
     this.registerEvent(this.app.vault.on("modify", this.onFileModified));
     this.registerEvent(this.app.workspace.on("file-open", this.onFileOpen));
 
@@ -223,6 +226,14 @@ export default class CalendarView extends ItemView implements HoverParent {
     if (date && this.calendar) {
       this.calendar.tick();
     }
+  }
+
+  private onFileRenamed(_file: TAbstractFile, _oldPath: string): void {
+    // Either the old or the new name may be a periodic note, and the old
+    // path no longer resolves to a file, so just rebuild both indexes.
+    dailyNotes.reindex();
+    weeklyNotes.reindex();
+    this.updateActiveFile();
   }
 
   private onFileCreated(file: TFile): void {
