@@ -4,10 +4,10 @@
   import type { Moment } from "moment";
   import {
     Calendar as CalendarBase,
-    ICalendarSource,
+    type ICalendarSource,
     configureGlobalMomentLocale,
   } from "obsidian-calendar-ui";
-  import { onDestroy } from "svelte";
+  import { onDestroy, type ComponentProps } from "svelte";
 
   import type { ISettings } from "src/settings";
   import { activeFile, dailyNotes, settings, weeklyNotes } from "./stores";
@@ -18,12 +18,44 @@
 
   export let displayedMonth: Moment = today;
   export let sources: ICalendarSource[];
-  export let onHoverDay: (date: Moment, targetEl: EventTarget) => boolean;
-  export let onHoverWeek: (date: Moment, targetEl: EventTarget) => boolean;
-  export let onClickDay: (date: Moment, isMetaPressed: boolean) => boolean;
-  export let onClickWeek: (date: Moment, isMetaPressed: boolean) => boolean;
-  export let onContextMenuDay: (date: Moment, event: MouseEvent) => boolean;
-  export let onContextMenuWeek: (date: Moment, event: MouseEvent) => boolean;
+  // These mirror how obsidian-calendar-ui actually invokes the handlers at
+  // runtime, which its index.d.ts understates: hover handlers receive a third
+  // `isMetaPressed` argument, and none of the handlers' return values are used.
+  export let onHoverDay: (
+    date: Moment,
+    targetEl: EventTarget,
+    isMetaPressed: boolean
+  ) => void;
+  export let onHoverWeek: (
+    date: Moment,
+    targetEl: EventTarget,
+    isMetaPressed: boolean
+  ) => void;
+  export let onClickDay: (date: Moment, isMetaPressed: boolean) => void;
+  export let onClickWeek: (date: Moment, isMetaPressed: boolean) => void;
+  export let onContextMenuDay: (date: Moment, event: MouseEvent) => void;
+  export let onContextMenuWeek: (date: Moment, event: MouseEvent) => void;
+
+  // Cast away the index.d.ts/runtime mismatch described above in one place.
+  type BaseHandlers = Pick<
+    ComponentProps<CalendarBase>,
+    | "onHoverDay"
+    | "onHoverWeek"
+    | "onClickDay"
+    | "onClickWeek"
+    | "onContextMenuDay"
+    | "onContextMenuWeek"
+  >;
+
+  let handlers: BaseHandlers;
+  $: handlers = {
+    onHoverDay,
+    onHoverWeek,
+    onClickDay,
+    onClickWeek,
+    onContextMenuDay,
+    onContextMenuWeek,
+  } as unknown as BaseHandlers;
 
   export function tick() {
     today = window.moment();
@@ -56,12 +88,7 @@
 <CalendarBase
   {sources}
   {today}
-  {onHoverDay}
-  {onHoverWeek}
-  {onContextMenuDay}
-  {onContextMenuWeek}
-  {onClickDay}
-  {onClickWeek}
+  {...handlers}
   bind:displayedMonth
   localeData={today.localeData()}
   selectedId={$activeFile}

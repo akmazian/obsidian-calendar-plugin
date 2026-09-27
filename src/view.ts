@@ -6,7 +6,15 @@ import {
   getWeeklyNote,
   getWeeklyNoteSettings,
 } from "obsidian-daily-notes-interface";
-import { FileView, TFile, ItemView, WorkspaceLeaf } from "obsidian";
+import {
+  FileView,
+  ItemView,
+  type HoverParent,
+  type HoverPopover,
+  TFile,
+  type TAbstractFile,
+  type WorkspaceLeaf,
+} from "obsidian";
 import { get } from "svelte/store";
 
 import { TRIGGER_ON_OPEN, VIEW_TYPE_CALENDAR } from "src/constants";
@@ -24,9 +32,14 @@ import {
   wordCountSource,
 } from "./ui/sources";
 
-export default class CalendarView extends ItemView {
-  private calendar: Calendar;
-  private settings: ISettings;
+export default class CalendarView extends ItemView implements HoverParent {
+  private calendar: Calendar | null = null;
+  // Assigned synchronously by the settings subscription in the constructor.
+  private settings!: ISettings;
+  public hoverPopover: HoverPopover | null = null;
+  // obsidian-calendar-ui only hands hover handlers the target element, but
+  // the "hover-link" event needs the originating pointer event.
+  private lastPointerOver: PointerEvent | null = null;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -37,6 +50,7 @@ export default class CalendarView extends ItemView {
     this.onNoteSettingsUpdate = this.onNoteSettingsUpdate.bind(this);
     this.onFileCreated = this.onFileCreated.bind(this);
     this.onFileDeleted = this.onFileDeleted.bind(this);
+    this.onFileRenamed = this.onFileRenamed.bind(this);
     this.onFileModified = this.onFileModified.bind(this);
     this.onFileOpen = this.onFileOpen.bind(this);
 
@@ -55,18 +69,22 @@ export default class CalendarView extends ItemView {
     );
     this.registerEvent(this.app.vault.on("create", this.onFileCreated));
     this.registerEvent(this.app.vault.on("delete", this.onFileDeleted));
+    this.registerEvent(this.app.vault.on("rename", this.onFileRenamed));
     this.registerEvent(this.app.vault.on("modify", this.onFileModified));
     this.registerEvent(this.app.workspace.on("file-open", this.onFileOpen));
 
-    this.settings = null;
-    settings.subscribe((val) => {
-      this.settings = val;
+    // Unsubscribe when the view closes; otherwise a closed view's destroyed
+    // calendar throws on the next settings change and blocks later subscribers.
+    this.register(
+      settings.subscribe((val) => {
+        this.settings = val;
 
-      // Refresh the calendar if settings change
-      if (this.calendar) {
-        this.calendar.tick();
-      }
-    });
+        // Refresh the calendar if settings change
+        if (this.calendar) {
+          this.calendar.tick();
+        }
+      })
+    );
   }
 
   getViewType(): string {
@@ -99,6 +117,14 @@ export default class CalendarView extends ItemView {
     ];
     this.app.workspace.trigger(TRIGGER_ON_OPEN, sources);
 
+    // Capture phase so this runs before the day/week cell's own handler.
+    this.registerDomEvent(
+      this.contentEl,
+      "pointerover",
+      (event) => (this.lastPointerOver = event),
+      { capture: true }
+    );
+
     this.calendar = new Calendar({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       target: (this as any).contentEl,
@@ -114,42 +140,44 @@ export default class CalendarView extends ItemView {
     });
   }
 
+  // The modifier-key requirement is enforced by Obsidian's page preview,
+  // per the "Calendar" hover source registered in main.ts.
   onHoverDay(
     date: Moment,
     targetEl: EventTarget,
-    isMetaPressed: boolean
+    _isMetaPressed: boolean
   ): void {
-    if (!isMetaPressed) {
-      return;
-    }
     const { format } = getDailyNoteSettings();
     const note = getDailyNote(date, get(dailyNotes));
-    this.app.workspace.trigger(
-      "link-hover",
-      this,
-      targetEl,
-      date.format(format),
-      note?.path
-    );
+    this.triggerHoverLink(targetEl, date.format(format), note?.path);
   }
 
   onHoverWeek(
     date: Moment,
     targetEl: EventTarget,
-    isMetaPressed: boolean
+    _isMetaPressed: boolean
   ): void {
-    if (!isMetaPressed) {
-      return;
-    }
     const note = getWeeklyNote(date, get(weeklyNotes));
     const { format } = getWeeklyNoteSettings();
-    this.app.workspace.trigger(
-      "link-hover",
-      this,
+    this.triggerHoverLink(targetEl, date.format(format), note?.path);
+  }
+
+  private triggerHoverLink(
+    targetEl: EventTarget,
+    linktext: string,
+    sourcePath: string | undefined
+  ): void {
+    if (!this.lastPointerOver) {
+      return;
+    }
+    this.app.workspace.trigger("hover-link", {
+      event: this.lastPointerOver,
+      source: VIEW_TYPE_CALENDAR,
+      hoverParent: this,
       targetEl,
-      date.format(format),
-      note?.path
-    );
+      linktext,
+      sourcePath,
+    });
   }
 
   private onContextMenuDay(date: Moment, event: MouseEvent): void {
@@ -182,7 +210,10 @@ export default class CalendarView extends ItemView {
     this.updateActiveFile();
   }
 
-  private async onFileDeleted(file: TFile): Promise<void> {
+  private async onFileDeleted(file: TAbstractFile): Promise<void> {
+    if (!(file instanceof TFile)) {
+      return;
+    }
     if (getDateFromFile(file, "day")) {
       dailyNotes.reindex();
       this.updateActiveFile();
@@ -193,14 +224,28 @@ export default class CalendarView extends ItemView {
     }
   }
 
-  private async onFileModified(file: TFile): Promise<void> {
+  private async onFileModified(file: TAbstractFile): Promise<void> {
+    if (!(file instanceof TFile)) {
+      return;
+    }
     const date = getDateFromFile(file, "day") || getDateFromFile(file, "week");
     if (date && this.calendar) {
       this.calendar.tick();
     }
   }
 
-  private onFileCreated(file: TFile): void {
+  private onFileRenamed(_file: TAbstractFile, _oldPath: string): void {
+    // Either the old or the new name may be a periodic note, and the old
+    // path no longer resolves to a file, so just rebuild both indexes.
+    dailyNotes.reindex();
+    weeklyNotes.reindex();
+    this.updateActiveFile();
+  }
+
+  private onFileCreated(file: TAbstractFile): void {
+    if (!(file instanceof TFile)) {
+      return;
+    }
     if (this.app.workspace.layoutReady && this.calendar) {
       if (getDateFromFile(file, "day")) {
         dailyNotes.reindex();
@@ -213,20 +258,15 @@ export default class CalendarView extends ItemView {
     }
   }
 
-  public onFileOpen(_file: TFile): void {
+  public onFileOpen(_file: TFile | null): void {
     if (this.app.workspace.layoutReady) {
       this.updateActiveFile();
     }
   }
 
   private updateActiveFile(): void {
-    const { view } = this.app.workspace.activeLeaf;
-
-    let file = null;
-    if (view instanceof FileView) {
-      file = view.file;
-    }
-    activeFile.setFile(file);
+    const view = this.app.workspace.getActiveViewOfType(FileView);
+    activeFile.setFile(view?.file ?? null);
 
     if (this.calendar) {
       this.calendar.tick();
@@ -235,23 +275,23 @@ export default class CalendarView extends ItemView {
 
   public revealActiveNote(): void {
     const { moment } = window;
-    const { activeLeaf } = this.app.workspace;
+    const file = this.app.workspace.getActiveViewOfType(FileView)?.file;
+    if (!file || !this.calendar) {
+      return;
+    }
 
-    if (activeLeaf.view instanceof FileView) {
-      // Check to see if the active note is a daily-note
-      let date = getDateFromFile(activeLeaf.view.file, "day");
-      if (date) {
-        this.calendar.$set({ displayedMonth: date });
-        return;
-      }
+    // Check to see if the active note is a daily-note
+    let date = getDateFromFile(file, "day");
+    if (date) {
+      this.calendar.$set({ displayedMonth: date });
+      return;
+    }
 
-      // Check to see if the active note is a weekly-note
-      const { format } = getWeeklyNoteSettings();
-      date = moment(activeLeaf.view.file.basename, format, true);
-      if (date.isValid()) {
-        this.calendar.$set({ displayedMonth: date });
-        return;
-      }
+    // Check to see if the active note is a weekly-note
+    const { format } = getWeeklyNoteSettings();
+    date = moment(file.basename, format, true);
+    if (date.isValid()) {
+      this.calendar.$set({ displayedMonth: date });
     }
   }
 
@@ -273,9 +313,7 @@ export default class CalendarView extends ItemView {
       return;
     }
 
-    const leaf = inNewSplit
-      ? workspace.splitActiveLeaf()
-      : workspace.getUnpinnedLeaf();
+    const leaf = workspace.getLeaf(inNewSplit ? "split" : false);
     await leaf.openFile(existingFile);
 
     activeFile.setFile(existingFile);
@@ -303,10 +341,8 @@ export default class CalendarView extends ItemView {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mode = (this.app.vault as any).getConfig("defaultViewMode");
-    const leaf = inNewSplit
-      ? workspace.splitActiveLeaf()
-      : workspace.getUnpinnedLeaf();
-    await leaf.openFile(existingFile, { active : true, mode });
+    const leaf = workspace.getLeaf(inNewSplit ? "split" : false);
+    await leaf.openFile(existingFile, { active: true, state: { mode } });
 
     activeFile.setFile(existingFile);
   }

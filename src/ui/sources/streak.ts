@@ -7,13 +7,13 @@ import { get } from "svelte/store";
 import { dailyNotes, weeklyNotes } from "../stores";
 import { classList } from "../utils";
 
-const getStreakClasses = (file: TFile): string[] => {
+const getStreakClasses = (file: TFile | null): string[] => {
   return classList({
     "has-note": !!file,
   });
 };
 
-export const streakSource: ICalendarSource = {
+export const streakSource = {
   getDailyMetadata: async (date: Moment): Promise<IDayMetadata> => {
     const file = getDailyNote(date, get(dailyNotes));
     return {
@@ -29,4 +29,4 @@ export const streakSource: ICalendarSource = {
       dots: [],
     };
   },
-};
+} satisfies ICalendarSource;

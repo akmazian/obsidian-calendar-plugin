@@ -11,7 +11,9 @@ import { clamp, getWordCount } from "../utils";
 
 const NUM_MAX_DOTS = 5;
 
-export async function getWordLengthAsDots(note: TFile): Promise<number> {
+export async function getWordLengthAsDots(
+  note: TFile | null
+): Promise<number> {
   const { wordsPerDot = DEFAULT_WORDS_PER_DOT } = get(settings);
   if (!note || wordsPerDot <= 0) {
     return 0;
@@ -31,9 +33,10 @@ export async function getDotsForDailyNote(
   }
   const numSolidDots = await getWordLengthAsDots(dailyNote);
 
-  const dots = [];
+  const dots: IDot[] = [];
   for (let i = 0; i < numSolidDots; i++) {
     dots.push({
+      className: "",
       color: "default",
       isFilled: true,
     });
@@ -41,7 +44,7 @@ export async function getDotsForDailyNote(
   return dots;
 }
 
-export const wordCountSource: ICalendarSource = {
+export const wordCountSource = {
   getDailyMetadata: async (date: Moment): Promise<IDayMetadata> => {
     const file = getDailyNote(date, get(dailyNotes));
     const dots = await getDotsForDailyNote(file);
@@ -58,4 +61,4 @@ export const wordCountSource: ICalendarSource = {
       dots,
     };
   },
-};
+} satisfies ICalendarSource;

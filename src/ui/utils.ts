@@ -19,8 +19,8 @@ export function partition(
   arr: string[],
   predicate: (elem: string) => boolean
 ): [string[], string[]] {
-  const pass = [];
-  const fail = [];
+  const pass: string[] = [];
+  const fail: string[] = [];
 
   arr.forEach((elem) => {
     if (predicate(elem)) {
@@ -39,7 +39,7 @@ export function partition(
  *
  * @param file
  */
-export function getDateUIDFromFile(file: TFile | null): string {
+export function getDateUIDFromFile(file: TFile | null): string | null {
   if (!file) {
     return null;
   }
@@ -66,7 +66,7 @@ export function getWordCount(text: string): number {
   const pattern = new RegExp(
     [
       `(?:[0-9]+(?:(?:,|\\.)[0-9]+)*|[\\-${spaceDelimitedChars}])+`,
-      nonSpaceDelimitedWords,
+      `[${nonSpaceDelimitedWords}]`,
     ].join("|"),
     "g"
   );

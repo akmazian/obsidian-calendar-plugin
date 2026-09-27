@@ -1,11 +1,10 @@
 {
-  "id": "calendar",
-  "name": "Calendar",
+  "id": "calendar-revived",
+  "name": "Calendar Revived",
   "description": "Calendar view of your daily notes",
-  "version": "1.5.10",
-  "author": "Liam Cain",
-  "authorUrl": "https://github.com/liamcain/",
-  "fundingUrl": "https://www.buymeacoffee.com/liamcain",
+  "version": "1.6.0",
+  "author": "Akmazian, adapted from Liam Cain",
+  "authorUrl": "https://github.com/akmazian",
   "isDesktopOnly": false,
-  "minAppVersion": "0.9.11"
+  "minAppVersion": "1.7.2"
 }

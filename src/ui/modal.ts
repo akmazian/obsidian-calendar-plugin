@@ -1,4 +1,4 @@
-import { App, Modal } from "obsidian";
+import { Modal, type App } from "obsidian";
 
 interface IConfirmationDialogParams {
   cta: string;

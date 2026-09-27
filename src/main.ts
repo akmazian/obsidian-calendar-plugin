@@ -1,32 +1,25 @@
-import type { Moment, WeekSpec } from "moment";
-import { App, Plugin, WorkspaceLeaf } from "obsidian";
+import type { WeekSpec } from "moment";
+import { Plugin, type App, type WorkspaceLeaf } from "obsidian";
 
 import { VIEW_TYPE_CALENDAR } from "./constants";
 import { settings } from "./ui/stores";
 import {
   appHasPeriodicNotesPluginLoaded,
   CalendarSettingsTab,
-  ISettings,
+  type ISettings,
 } from "./settings";
 import CalendarView from "./view";
 
 declare global {
   interface Window {
     app: App;
-    moment: () => Moment;
     _bundledLocaleWeekSpec: WeekSpec;
   }
 }
 
 export default class CalendarPlugin extends Plugin {
-  public options: ISettings;
-  private view: CalendarView;
-
-  onunload(): void {
-    this.app.workspace
-      .getLeavesOfType(VIEW_TYPE_CALENDAR)
-      .forEach((leaf) => leaf.detach());
-  }
+  // Assigned synchronously by the settings subscription in onload().
+  public options!: ISettings;
 
   async onload(): Promise<void> {
     this.register(
@@ -37,8 +30,12 @@ export default class CalendarPlugin extends Plugin {
 
     this.registerView(
       VIEW_TYPE_CALENDAR,
-      (leaf: WorkspaceLeaf) => (this.view = new CalendarView(leaf))
+      (leaf: WorkspaceLeaf) => new CalendarView(leaf)
     );
+    this.registerHoverLinkSource(VIEW_TYPE_CALENDAR, {
+      display: "Calendar",
+      defaultMod: true,
+    });
 
     this.addCommand({
       id: "show-calendar-view",
@@ -60,34 +57,44 @@ export default class CalendarPlugin extends Plugin {
         if (checking) {
           return !appHasPeriodicNotesPluginLoaded();
         }
-        this.view.openOrCreateWeeklyNote(window.moment(), false);
+        void this.getCalendarView().then((view) =>
+          view?.openOrCreateWeeklyNote(window.moment(), false)
+        );
       },
     });
 
     this.addCommand({
       id: "reveal-active-note",
       name: "Reveal active note",
-      callback: () => this.view.revealActiveNote(),
+      callback: async () => {
+        const view = await this.getCalendarView();
+        view?.revealActiveNote();
+      },
     });
 
     await this.loadOptions();
 
     this.addSettingTab(new CalendarSettingsTab(this.app, this));
 
-    if (this.app.workspace.layoutReady) {
-      this.initLeaf();
-    } else {
-      this.registerEvent(
-        this.app.workspace.on("layout-ready", this.initLeaf.bind(this))
-      );
+    this.app.workspace.onLayoutReady(this.initLeaf.bind(this));
+  }
+
+  // Sidebar views are deferred until first shown (Obsidian 1.7+), so the
+  // leaf's view may not be a CalendarView until it's loaded.
+  private async getCalendarView(): Promise<CalendarView | null> {
+    const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
+    if (!leaf) {
+      return null;
     }
+    await leaf.loadIfDeferred();
+    return leaf.view instanceof CalendarView ? leaf.view : null;
   }
 
   initLeaf(): void {
     if (this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).length) {
       return;
     }
-    this.app.workspace.getRightLeaf(false).setViewState({
+    this.app.workspace.getRightLeaf(false)?.setViewState({
       type: VIEW_TYPE_CALENDAR,
     });
   }

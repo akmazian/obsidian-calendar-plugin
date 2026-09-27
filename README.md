@@ -1,4 +1,10 @@
-# obsidian-calendar-plugin
+# Calendar Revived
+
+A maintained fork of [Liam Cain's Calendar plugin](https://github.com/liamcain/obsidian-calendar-plugin), updated for current Obsidian (1.7.2+). The original hasn't been updated since 2021; this fork brings its toolchain up to date and fixes features that broke on newer Obsidian releases, such as hover previews and the commands.
+
+It installs as a separate plugin (`calendar-revived`), so settings from the original Calendar plugin are not carried over. To move them, copy `.obsidian/plugins/calendar/data.json` to `.obsidian/plugins/calendar-revived/data.json`.
+
+**Install:** until it's in the community plugin directory, install it with [BRAT](https://github.com/TfTHacker/obsidian42-brat) using `akmazian/obsidian-calendar-plugin`, or download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/akmazian/obsidian-calendar-plugin/releases/latest) into `.obsidian/plugins/calendar-revived/`.
 
 This plugin for [Obsidian](https://obsidian.md/) creates a simple Calendar view for visualizing and navigating between your daily notes.
 

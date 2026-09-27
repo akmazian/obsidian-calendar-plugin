@@ -1,7 +1,7 @@
 import type { App } from "obsidian";
 
 /* eslint-disable */
-const mockApp: App = {
+const mockApp = {
   vault: {
     adapter: {
       exists: () => Promise.resolve(false),
@@ -19,10 +19,16 @@ const mockApp: App = {
       remove: () => Promise.resolve(),
       rename: () => Promise.resolve(),
       copy: () => Promise.resolve(),
+      stat: () => Promise.resolve(null),
+      append: () => Promise.resolve(),
+      appendBinary: () => Promise.resolve(),
+      process: () => Promise.resolve(""),
     },
     configDir: ".obsidian",
     getName: () => "",
     getAbstractFileByPath: () => null,
+    getFileByPath: () => null,
+    getFolderByPath: () => null,
     getRoot: () => ({
       children: [],
       isRoot: () => true,
@@ -31,7 +37,7 @@ const mockApp: App = {
       path: "",
       vault: null,
     }),
-    create: jest.fn(),
+    create: () => Promise.resolve(null),
     createFolder: () => Promise.resolve(null),
     createBinary: () => Promise.resolve(null),
     read: () => Promise.resolve(""),
@@ -43,10 +49,14 @@ const mockApp: App = {
     rename: () => Promise.resolve(),
     modify: () => Promise.resolve(),
     modifyBinary: () => Promise.resolve(),
+    append: () => Promise.resolve(),
+    appendBinary: () => Promise.resolve(),
+    process: () => Promise.resolve(""),
     copy: () => Promise.resolve(null),
     getAllLoadedFiles: () => [],
     getMarkdownFiles: () => [],
     getFiles: () => [],
+    getAllFolders: () => [],
     on: () => null,
     off: () => null,
     offref: () => null,
@@ -81,7 +91,7 @@ const mockApp: App = {
       },
     },
   },
-};
+} as unknown as App;
 /* eslint-enable */
 
 export default mockApp;
