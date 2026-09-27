@@ -20,12 +20,6 @@ declare global {
 export default class CalendarPlugin extends Plugin {
   public options: ISettings;
 
-  onunload(): void {
-    this.app.workspace
-      .getLeavesOfType(VIEW_TYPE_CALENDAR)
-      .forEach((leaf) => leaf.detach());
-  }
-
   async onload(): Promise<void> {
     this.register(
       settings.subscribe((value) => {
