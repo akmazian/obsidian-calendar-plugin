@@ -37,10 +37,10 @@ function getFormattedTagAttributes(note: TFile | null): Record<string, string> {
     )
   );
 
-  if (nonEmojiTags) {
+  if (nonEmojiTags.length) {
     attrs["data-tags"] = nonEmojiTags.join(" ");
   }
-  if (emojiTags) {
+  if (emojiTags.length) {
     attrs["data-emoji-tag"] = emojiTags[0];
   }
 
