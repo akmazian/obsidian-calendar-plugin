@@ -1,8 +1,8 @@
 {
-  "name": "calendar",
-  "version": "1.5.10",
+  "name": "calendar-revived",
+  "version": "1.6.0",
   "description": "Calendar view of your daily notes",
-  "author": "liamcain",
+  "author": "Akmazian, adapted from Liam Cain",
   "main": "main.js",
   "license": "MIT",
   "packageManager": "pnpm@10.32.1",
