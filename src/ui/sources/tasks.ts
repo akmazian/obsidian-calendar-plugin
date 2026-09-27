@@ -6,7 +6,9 @@ import { get } from "svelte/store";
 
 import { dailyNotes, weeklyNotes } from "../stores";
 
-export async function getNumberOfRemainingTasks(note: TFile): Promise<number> {
+export async function getNumberOfRemainingTasks(
+  note: TFile | null
+): Promise<number> {
   if (!note) {
     return 0;
   }
@@ -24,7 +26,7 @@ export async function getDotsForDailyNote(
   }
   const numTasks = await getNumberOfRemainingTasks(dailyNote);
 
-  const dots = [];
+  const dots: IDot[] = [];
   if (numTasks) {
     dots.push({
       className: "task",
@@ -35,7 +37,7 @@ export async function getDotsForDailyNote(
   return dots;
 }
 
-export const tasksSource: ICalendarSource = {
+export const tasksSource = {
   getDailyMetadata: async (date: Moment): Promise<IDayMetadata> => {
     const file = getDailyNote(date, get(dailyNotes));
     const dots = await getDotsForDailyNote(file);
@@ -52,4 +54,4 @@ export const tasksSource: ICalendarSource = {
       dots,
     };
   },
-};
+} satisfies ICalendarSource;

@@ -15,6 +15,9 @@ vi.mock("obsidian-daily-notes-interface", async (importOriginal) => ({
 const { getDailyNote, getWeeklyNote } = await import(
   "obsidian-daily-notes-interface"
 );
+// The library's types claim a TFile is always returned; at runtime it's null
+// when no note exists for the date.
+const noNote = null as unknown as TFile;
 
 function mockFrontmatter(frontmatter: Record<string, unknown> | undefined) {
   vi.mocked(getDailyNote).mockReturnValue(note);
@@ -48,7 +51,7 @@ describe("customTagsSource", () => {
   });
 
   it("sets no attributes when there is no note", async () => {
-    vi.mocked(getDailyNote).mockReturnValue(null);
+    vi.mocked(getDailyNote).mockReturnValue(noNote);
     const { dataAttributes } = await customTagsSource.getDailyMetadata(date);
     expect(dataAttributes).toEqual({});
   });

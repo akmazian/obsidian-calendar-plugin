@@ -23,6 +23,9 @@ export async function tryToCreateDailyNote(
 
   const createFile = async () => {
     const dailyNote = await createDailyNote(date);
+    if (!dailyNote) {
+      return;
+    }
     const leaf = workspace.getLeaf(inNewSplit ? "split" : false);
 
     await leaf.openFile(dailyNote, { active : true });

@@ -11,8 +11,8 @@ import {
   ItemView,
   type HoverParent,
   type HoverPopover,
+  TFile,
   type TAbstractFile,
-  type TFile,
   type WorkspaceLeaf,
 } from "obsidian";
 import { get } from "svelte/store";
@@ -33,8 +33,9 @@ import {
 } from "./ui/sources";
 
 export default class CalendarView extends ItemView implements HoverParent {
-  private calendar: Calendar;
-  private settings: ISettings;
+  private calendar: Calendar | null = null;
+  // Assigned synchronously by the settings subscription in the constructor.
+  private settings!: ISettings;
   public hoverPopover: HoverPopover | null = null;
   // obsidian-calendar-ui only hands hover handlers the target element, but
   // the "hover-link" event needs the originating pointer event.
@@ -72,7 +73,6 @@ export default class CalendarView extends ItemView implements HoverParent {
     this.registerEvent(this.app.vault.on("modify", this.onFileModified));
     this.registerEvent(this.app.workspace.on("file-open", this.onFileOpen));
 
-    this.settings = null;
     // Unsubscribe when the view closes; otherwise a closed view's destroyed
     // calendar throws on the next settings change and blocks later subscribers.
     this.register(
@@ -210,7 +210,10 @@ export default class CalendarView extends ItemView implements HoverParent {
     this.updateActiveFile();
   }
 
-  private async onFileDeleted(file: TFile): Promise<void> {
+  private async onFileDeleted(file: TAbstractFile): Promise<void> {
+    if (!(file instanceof TFile)) {
+      return;
+    }
     if (getDateFromFile(file, "day")) {
       dailyNotes.reindex();
       this.updateActiveFile();
@@ -221,7 +224,10 @@ export default class CalendarView extends ItemView implements HoverParent {
     }
   }
 
-  private async onFileModified(file: TFile): Promise<void> {
+  private async onFileModified(file: TAbstractFile): Promise<void> {
+    if (!(file instanceof TFile)) {
+      return;
+    }
     const date = getDateFromFile(file, "day") || getDateFromFile(file, "week");
     if (date && this.calendar) {
       this.calendar.tick();
@@ -236,7 +242,10 @@ export default class CalendarView extends ItemView implements HoverParent {
     this.updateActiveFile();
   }
 
-  private onFileCreated(file: TFile): void {
+  private onFileCreated(file: TAbstractFile): void {
+    if (!(file instanceof TFile)) {
+      return;
+    }
     if (this.app.workspace.layoutReady && this.calendar) {
       if (getDateFromFile(file, "day")) {
         dailyNotes.reindex();
@@ -249,7 +258,7 @@ export default class CalendarView extends ItemView implements HoverParent {
     }
   }
 
-  public onFileOpen(_file: TFile): void {
+  public onFileOpen(_file: TFile | null): void {
     if (this.app.workspace.layoutReady) {
       this.updateActiveFile();
     }
@@ -266,23 +275,23 @@ export default class CalendarView extends ItemView implements HoverParent {
 
   public revealActiveNote(): void {
     const { moment } = window;
-    const view = this.app.workspace.getActiveViewOfType(FileView);
+    const file = this.app.workspace.getActiveViewOfType(FileView)?.file;
+    if (!file || !this.calendar) {
+      return;
+    }
 
-    if (view) {
-      // Check to see if the active note is a daily-note
-      let date = getDateFromFile(view.file, "day");
-      if (date) {
-        this.calendar.$set({ displayedMonth: date });
-        return;
-      }
+    // Check to see if the active note is a daily-note
+    let date = getDateFromFile(file, "day");
+    if (date) {
+      this.calendar.$set({ displayedMonth: date });
+      return;
+    }
 
-      // Check to see if the active note is a weekly-note
-      const { format } = getWeeklyNoteSettings();
-      date = moment(view.file.basename, format, true);
-      if (date.isValid()) {
-        this.calendar.$set({ displayedMonth: date });
-        return;
-      }
+    // Check to see if the active note is a weekly-note
+    const { format } = getWeeklyNoteSettings();
+    date = moment(file.basename, format, true);
+    if (date.isValid()) {
+      this.calendar.$set({ displayedMonth: date });
     }
   }
 

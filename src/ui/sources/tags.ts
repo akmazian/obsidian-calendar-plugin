@@ -47,7 +47,7 @@ function getFormattedTagAttributes(note: TFile | null): Record<string, string> {
   return attrs;
 }
 
-export const customTagsSource: ICalendarSource = {
+export const customTagsSource = {
   getDailyMetadata: async (date: Moment): Promise<IDayMetadata> => {
     const file = getDailyNote(date, get(dailyNotes));
     return {
@@ -62,4 +62,4 @@ export const customTagsSource: ICalendarSource = {
       dots: [],
     };
   },
-};
+} satisfies ICalendarSource;

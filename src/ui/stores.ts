@@ -11,7 +11,7 @@ import { getDateUIDFromFile } from "./utils";
 
 function createDailyNotesStore() {
   let hasError = false;
-  const store = writable<Record<string, TFile>>(null);
+  const store = writable<Record<string, TFile>>({});
   return {
     reindex: () => {
       try {
@@ -33,7 +33,7 @@ function createDailyNotesStore() {
 
 function createWeeklyNotesStore() {
   let hasError = false;
-  const store = writable<Record<string, TFile>>(null);
+  const store = writable<Record<string, TFile>>({});
   return {
     reindex: () => {
       try {
@@ -58,10 +58,10 @@ export const dailyNotes = createDailyNotesStore();
 export const weeklyNotes = createWeeklyNotesStore();
 
 function createSelectedFileStore() {
-  const store = writable<string>(null);
+  const store = writable<string | null>(null);
 
   return {
-    setFile: (file: TFile) => {
+    setFile: (file: TFile | null) => {
       const id = getDateUIDFromFile(file);
       store.set(id);
     },

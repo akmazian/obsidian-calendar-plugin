@@ -14,6 +14,9 @@ vi.mock("obsidian-daily-notes-interface", async (importOriginal) => ({
 const { getDailyNote, getWeeklyNote } = await import(
   "obsidian-daily-notes-interface"
 );
+// The library's types claim a TFile is always returned; at runtime it's null
+// when no note exists for the date.
+const noNote = null as unknown as TFile;
 
 describe("streakSource", () => {
   afterEach(() => vi.resetAllMocks());
@@ -27,7 +30,7 @@ describe("streakSource", () => {
   });
 
   it("leaves days without a note unmarked", async () => {
-    vi.mocked(getDailyNote).mockReturnValue(null);
+    vi.mocked(getDailyNote).mockReturnValue(noNote);
     expect(await streakSource.getDailyMetadata(date)).toEqual({
       classes: [],
       dots: [],

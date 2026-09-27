@@ -18,7 +18,8 @@ declare global {
 }
 
 export default class CalendarPlugin extends Plugin {
-  public options: ISettings;
+  // Assigned synchronously by the settings subscription in onload().
+  public options!: ISettings;
 
   async onload(): Promise<void> {
     this.register(
@@ -93,7 +94,7 @@ export default class CalendarPlugin extends Plugin {
     if (this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).length) {
       return;
     }
-    this.app.workspace.getRightLeaf(false).setViewState({
+    this.app.workspace.getRightLeaf(false)?.setViewState({
       type: VIEW_TYPE_CALENDAR,
     });
   }

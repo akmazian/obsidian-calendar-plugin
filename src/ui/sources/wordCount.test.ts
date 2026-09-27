@@ -59,8 +59,8 @@ describe("getDotsForDailyNote", () => {
     settings.set(getDefaultSettings({ wordsPerDot: 50 }));
     mockNoteWithWords(100);
     expect(await getDotsForDailyNote(note)).toEqual([
-      { color: "default", isFilled: true },
-      { color: "default", isFilled: true },
+      { className: "", color: "default", isFilled: true },
+      { className: "", color: "default", isFilled: true },
     ]);
   });
 
