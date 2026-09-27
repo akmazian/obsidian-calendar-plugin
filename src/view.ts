@@ -6,7 +6,14 @@ import {
   getWeeklyNote,
   getWeeklyNoteSettings,
 } from "obsidian-daily-notes-interface";
-import { FileView, ItemView, type TFile, type WorkspaceLeaf } from "obsidian";
+import {
+  FileView,
+  ItemView,
+  type HoverParent,
+  type HoverPopover,
+  type TFile,
+  type WorkspaceLeaf,
+} from "obsidian";
 import { get } from "svelte/store";
 
 import { TRIGGER_ON_OPEN, VIEW_TYPE_CALENDAR } from "src/constants";
@@ -24,9 +31,13 @@ import {
   wordCountSource,
 } from "./ui/sources";
 
-export default class CalendarView extends ItemView {
+export default class CalendarView extends ItemView implements HoverParent {
   private calendar: Calendar;
   private settings: ISettings;
+  public hoverPopover: HoverPopover | null = null;
+  // obsidian-calendar-ui only hands hover handlers the target element, but
+  // the "hover-link" event needs the originating pointer event.
+  private lastPointerOver: PointerEvent | null = null;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -59,14 +70,18 @@ export default class CalendarView extends ItemView {
     this.registerEvent(this.app.workspace.on("file-open", this.onFileOpen));
 
     this.settings = null;
-    settings.subscribe((val) => {
-      this.settings = val;
+    // Unsubscribe when the view closes; otherwise a closed view's destroyed
+    // calendar throws on the next settings change and blocks later subscribers.
+    this.register(
+      settings.subscribe((val) => {
+        this.settings = val;
 
-      // Refresh the calendar if settings change
-      if (this.calendar) {
-        this.calendar.tick();
-      }
-    });
+        // Refresh the calendar if settings change
+        if (this.calendar) {
+          this.calendar.tick();
+        }
+      })
+    );
   }
 
   getViewType(): string {
@@ -99,6 +114,14 @@ export default class CalendarView extends ItemView {
     ];
     this.app.workspace.trigger(TRIGGER_ON_OPEN, sources);
 
+    // Capture phase so this runs before the day/week cell's own handler.
+    this.registerDomEvent(
+      this.contentEl,
+      "pointerover",
+      (event) => (this.lastPointerOver = event),
+      { capture: true }
+    );
+
     this.calendar = new Calendar({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       target: (this as any).contentEl,
@@ -114,42 +137,44 @@ export default class CalendarView extends ItemView {
     });
   }
 
+  // The modifier-key requirement is enforced by Obsidian's page preview,
+  // per the "Calendar" hover source registered in main.ts.
   onHoverDay(
     date: Moment,
     targetEl: EventTarget,
-    isMetaPressed: boolean
+    _isMetaPressed: boolean
   ): void {
-    if (!isMetaPressed) {
-      return;
-    }
     const { format } = getDailyNoteSettings();
     const note = getDailyNote(date, get(dailyNotes));
-    this.app.workspace.trigger(
-      "link-hover",
-      this,
-      targetEl,
-      date.format(format),
-      note?.path
-    );
+    this.triggerHoverLink(targetEl, date.format(format), note?.path);
   }
 
   onHoverWeek(
     date: Moment,
     targetEl: EventTarget,
-    isMetaPressed: boolean
+    _isMetaPressed: boolean
   ): void {
-    if (!isMetaPressed) {
-      return;
-    }
     const note = getWeeklyNote(date, get(weeklyNotes));
     const { format } = getWeeklyNoteSettings();
-    this.app.workspace.trigger(
-      "link-hover",
-      this,
+    this.triggerHoverLink(targetEl, date.format(format), note?.path);
+  }
+
+  private triggerHoverLink(
+    targetEl: EventTarget,
+    linktext: string,
+    sourcePath: string | undefined
+  ): void {
+    if (!this.lastPointerOver) {
+      return;
+    }
+    this.app.workspace.trigger("hover-link", {
+      event: this.lastPointerOver,
+      source: VIEW_TYPE_CALENDAR,
+      hoverParent: this,
       targetEl,
-      date.format(format),
-      note?.path
-    );
+      linktext,
+      sourcePath,
+    });
   }
 
   private onContextMenuDay(date: Moment, event: MouseEvent): void {
