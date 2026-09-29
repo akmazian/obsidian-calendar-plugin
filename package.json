@@ -1,6 +1,6 @@
 {
   "name": "calendar-revived",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Calendar view of your daily notes",
   "author": "Akmazian, adapted from Liam Cain",
   "main": "main.js",
