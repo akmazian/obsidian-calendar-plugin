@@ -10,7 +10,6 @@ export function getDefaultSettings(
     {
       weekStart: "sunday" as IWeekStartOption,
       shouldConfirmBeforeCreate: false,
-      wordsPerDot: 50,
       showWeeklyNote: false,
       weeklyNoteFolder: "",
       weeklyNoteFormat: "",

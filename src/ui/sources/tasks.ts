@@ -1,57 +1,23 @@
 import type { Moment } from "moment";
-import type { TFile } from "obsidian";
 import type { ICalendarSource, IDayMetadata, IDot } from "obsidian-calendar-ui";
-import { getDailyNote, getWeeklyNote } from "obsidian-daily-notes-interface";
-import { get } from "svelte/store";
+import { getDateUID } from "obsidian-daily-notes-interface";
 
-import { dailyNotes, weeklyNotes } from "../stores";
+import { taskIndex } from "../taskIndex";
 
-export async function getNumberOfRemainingTasks(
-  note: TFile | null
-): Promise<number> {
-  if (!note) {
-    return 0;
-  }
-
-  const { vault } = window.app;
-  const fileContents = await vault.cachedRead(note);
-  return (fileContents.match(/(-|\*) \[ \]/g) || []).length;
-}
-
-export async function getDotsForDailyNote(
-  dailyNote: TFile | null
-): Promise<IDot[]> {
-  if (!dailyNote) {
+function getTaskDots(dateUID: string): IDot[] {
+  if (taskIndex.getUnfinishedCount(dateUID) === 0) {
     return [];
   }
-  const numTasks = await getNumberOfRemainingTasks(dailyNote);
-
-  const dots: IDot[] = [];
-  if (numTasks) {
-    dots.push({
-      className: "task",
-      color: "default",
-      isFilled: false,
-    });
-  }
-  return dots;
+  return [{ className: "task", color: "default", isFilled: true }];
 }
 
+/** One dot on days and weeks that still have unfinished tasks. */
 export const tasksSource = {
-  getDailyMetadata: async (date: Moment): Promise<IDayMetadata> => {
-    const file = getDailyNote(date, get(dailyNotes));
-    const dots = await getDotsForDailyNote(file);
-    return {
-      dots,
-    };
-  },
+  getDailyMetadata: async (date: Moment): Promise<IDayMetadata> => ({
+    dots: getTaskDots(getDateUID(date, "day")),
+  }),
 
-  getWeeklyMetadata: async (date: Moment): Promise<IDayMetadata> => {
-    const file = getWeeklyNote(date, get(weeklyNotes));
-    const dots = await getDotsForDailyNote(file);
-
-    return {
-      dots,
-    };
-  },
+  getWeeklyMetadata: async (date: Moment): Promise<IDayMetadata> => ({
+    dots: getTaskDots(getDateUID(date, "week")),
+  }),
 } satisfies ICalendarSource;

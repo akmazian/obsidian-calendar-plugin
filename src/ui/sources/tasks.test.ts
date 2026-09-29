@@ -1,48 +1,30 @@
-import type { TFile } from "obsidian";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getDotsForDailyNote, getNumberOfRemainingTasks } from "./tasks";
+import { taskIndex } from "../taskIndex";
+import { tasksSource } from "./tasks";
 
-const note = {} as TFile;
+const date = window.moment("2026-09-20");
 
-function mockNoteContents(contents: string) {
-  vi.spyOn(window.app.vault, "cachedRead").mockResolvedValue(contents);
-}
-
-describe("getNumberOfRemainingTasks", () => {
+describe("tasksSource", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("returns 0 when there is no note", async () => {
-    expect(await getNumberOfRemainingTasks(null)).toBe(0);
+  it("shows one filled dot when the day has unfinished tasks", async () => {
+    vi.spyOn(taskIndex, "getUnfinishedCount").mockReturnValue(3);
+    expect(await tasksSource.getDailyMetadata(date)).toEqual({
+      dots: [{ className: "task", color: "default", isFilled: true }],
+    });
   });
 
-  it("counts open tasks with either bullet style", async () => {
-    mockNoteContents("- [ ] one\n* [ ] two\n  - [ ] nested");
-    expect(await getNumberOfRemainingTasks(note)).toBe(3);
+  it("shows no dot when everything is done", async () => {
+    vi.spyOn(taskIndex, "getUnfinishedCount").mockReturnValue(0);
+    expect(await tasksSource.getDailyMetadata(date)).toEqual({ dots: [] });
   });
 
-  it("ignores completed tasks and plain list items", async () => {
-    mockNoteContents("- [x] done\n- [X] done\n- not a task\n- [ ] open");
-    expect(await getNumberOfRemainingTasks(note)).toBe(1);
-  });
-});
-
-describe("getDotsForDailyNote", () => {
-  afterEach(() => vi.restoreAllMocks());
-
-  it("shows a single hollow task dot when tasks remain", async () => {
-    mockNoteContents("- [ ] a\n- [ ] b");
-    expect(await getDotsForDailyNote(note)).toEqual([
-      { className: "task", color: "default", isFilled: false },
-    ]);
-  });
-
-  it("shows no dot when every task is done", async () => {
-    mockNoteContents("- [x] a");
-    expect(await getDotsForDailyNote(note)).toEqual([]);
-  });
-
-  it("shows no dot without a note", async () => {
-    expect(await getDotsForDailyNote(null)).toEqual([]);
+  it("looks weeks up by their week UID", async () => {
+    const spy = vi.spyOn(taskIndex, "getUnfinishedCount").mockReturnValue(1);
+    await tasksSource.getWeeklyMetadata(date);
+    expect(spy).toHaveBeenCalledWith(
+      `week-${date.clone().startOf("week").format()}`
+    );
   });
 });

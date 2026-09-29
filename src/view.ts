@@ -25,11 +25,12 @@ import type { ISettings } from "src/settings";
 import Calendar from "./ui/Calendar.svelte";
 import { showFileMenu } from "./ui/fileMenu";
 import { activeFile, dailyNotes, weeklyNotes, settings } from "./ui/stores";
+import { taskIndex } from "./ui/taskIndex";
+import { getDateUIDFromFile } from "./ui/utils";
 import {
   customTagsSource,
   streakSource,
   tasksSource,
-  wordCountSource,
 } from "./ui/sources";
 
 export default class CalendarView extends ItemView implements HoverParent {
@@ -51,7 +52,7 @@ export default class CalendarView extends ItemView implements HoverParent {
     this.onFileCreated = this.onFileCreated.bind(this);
     this.onFileDeleted = this.onFileDeleted.bind(this);
     this.onFileRenamed = this.onFileRenamed.bind(this);
-    this.onFileModified = this.onFileModified.bind(this);
+    this.onMetadataChanged = this.onMetadataChanged.bind(this);
     this.onFileOpen = this.onFileOpen.bind(this);
 
     this.onHoverDay = this.onHoverDay.bind(this);
@@ -70,7 +71,10 @@ export default class CalendarView extends ItemView implements HoverParent {
     this.registerEvent(this.app.vault.on("create", this.onFileCreated));
     this.registerEvent(this.app.vault.on("delete", this.onFileDeleted));
     this.registerEvent(this.app.vault.on("rename", this.onFileRenamed));
-    this.registerEvent(this.app.vault.on("modify", this.onFileModified));
+    // Metadata, not vault "modify": the cache is only current once parsed.
+    this.registerEvent(
+      this.app.metadataCache.on("changed", this.onMetadataChanged)
+    );
     this.registerEvent(this.app.workspace.on("file-open", this.onFileOpen));
 
     // Unsubscribe when the view closes; otherwise a closed view's destroyed
@@ -112,7 +116,6 @@ export default class CalendarView extends ItemView implements HoverParent {
     const sources = [
       customTagsSource,
       streakSource,
-      wordCountSource,
       tasksSource,
     ];
     this.app.workspace.trigger(TRIGGER_ON_OPEN, sources);
@@ -124,6 +127,11 @@ export default class CalendarView extends ItemView implements HoverParent {
       (event) => (this.lastPointerOver = event),
       { capture: true }
     );
+
+    this.app.workspace.onLayoutReady(() => {
+      taskIndex.rebuild();
+      this.calendar?.tick();
+    });
 
     this.calendar = new Calendar({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -207,12 +215,17 @@ export default class CalendarView extends ItemView implements HoverParent {
   private onNoteSettingsUpdate(): void {
     dailyNotes.reindex();
     weeklyNotes.reindex();
+    // Note formats decide which links point at days, so recount everything.
+    taskIndex.rebuild();
     this.updateActiveFile();
   }
 
   private async onFileDeleted(file: TAbstractFile): Promise<void> {
     if (!(file instanceof TFile)) {
       return;
+    }
+    if (taskIndex.remove(file.path)) {
+      this.calendar?.tick();
     }
     if (getDateFromFile(file, "day")) {
       dailyNotes.reindex();
@@ -224,17 +237,18 @@ export default class CalendarView extends ItemView implements HoverParent {
     }
   }
 
-  private async onFileModified(file: TAbstractFile): Promise<void> {
-    if (!(file instanceof TFile)) {
-      return;
-    }
-    const date = getDateFromFile(file, "day") || getDateFromFile(file, "week");
-    if (date && this.calendar) {
-      this.calendar.tick();
+  private onMetadataChanged(file: TFile): void {
+    const tasksChanged = taskIndex.update(file);
+    // Periodic notes also feed the tag source, so refresh on any change.
+    if (tasksChanged || getDateUIDFromFile(file)) {
+      this.calendar?.tick();
     }
   }
 
-  private onFileRenamed(_file: TAbstractFile, _oldPath: string): void {
+  private onFileRenamed(file: TAbstractFile, oldPath: string): void {
+    if (file instanceof TFile) {
+      taskIndex.rename(file, oldPath);
+    }
     // Either the old or the new name may be a periodic note, and the old
     // path no longer resolves to a file, so just rebuild both indexes.
     dailyNotes.reindex();

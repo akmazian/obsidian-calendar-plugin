@@ -78,7 +78,13 @@ const mockApp = {
     unresolvedLinks: null,
   },
   // @ts-ignore
+  plugins: {
+    getPlugin: () => null,
+  },
   internalPlugins: {
+    getPluginById(id: string) {
+      return this.plugins[id as keyof typeof this.plugins] ?? null;
+    },
     plugins: {
       "daily-notes": {
         instance: {

@@ -2,12 +2,11 @@ import { PluginSettingTab, Setting, type App } from "obsidian";
 import { appHasDailyNotesPluginLoaded } from "obsidian-daily-notes-interface";
 import type { ILocaleOverride, IWeekStartOption } from "obsidian-calendar-ui";
 
-import { DEFAULT_WEEK_FORMAT, DEFAULT_WORDS_PER_DOT } from "src/constants";
+import { DEFAULT_WEEK_FORMAT } from "src/constants";
 
 import type CalendarPlugin from "./main";
 
 export interface ISettings {
-  wordsPerDot: number;
   weekStart: IWeekStartOption;
   shouldConfirmBeforeCreate: boolean;
 
@@ -34,7 +33,6 @@ export const defaultSettings = Object.freeze({
   shouldConfirmBeforeCreate: true,
   weekStart: "locale" as IWeekStartOption,
 
-  wordsPerDot: DEFAULT_WORDS_PER_DOT,
 
   showWeeklyNote: false,
   weeklyNoteFormat: "",
@@ -77,7 +75,6 @@ export class CalendarSettingsTab extends PluginSettingTab {
     this.containerEl.createEl("h3", {
       text: "General Settings",
     });
-    this.addDotThresholdSetting();
     this.addWeekStartSetting();
     this.addConfirmCreateSetting();
     this.addShowWeeklyNoteSetting();
@@ -103,22 +100,6 @@ export class CalendarSettingsTab extends PluginSettingTab {
       text: "Advanced Settings",
     });
     this.addLocaleOverrideSetting();
-  }
-
-  addDotThresholdSetting(): void {
-    new Setting(this.containerEl)
-      .setName("Words per dot")
-      .setDesc("How many words should be represented by a single dot?")
-      .addText((textfield) => {
-        textfield.setPlaceholder(String(DEFAULT_WORDS_PER_DOT));
-        textfield.inputEl.type = "number";
-        textfield.setValue(String(this.plugin.options.wordsPerDot));
-        textfield.onChange(async (value) => {
-          this.plugin.writeOptions(() => ({
-            wordsPerDot: value !== "" ? Number(value) : undefined,
-          }));
-        });
-      });
   }
 
   addWeekStartSetting(): void {

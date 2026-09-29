@@ -101,6 +101,8 @@ export default class CalendarPlugin extends Plugin {
 
   async loadOptions(): Promise<void> {
     const options = await this.loadData();
+    // Word-count dots were removed; drop the stale setting.
+    delete options?.wordsPerDot;
     settings.update((old) => {
       return {
         ...old,

@@ -22,3 +22,9 @@ export function parseFrontMatterTags(
     .map((tag) => (tag.startsWith("#") ? tag : `#${tag}`));
   return tags.length ? tags : null;
 }
+
+// Strips a "#heading" or "#^block" subpath, like Obsidian's getLinkpath.
+export function getLinkpath(linktext: string): string {
+  const hash = linktext.indexOf("#");
+  return hash === -1 ? linktext : linktext.slice(0, hash);
+}

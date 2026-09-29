@@ -20,13 +20,12 @@ The plugin reads your Daily Note settings to know your date format, your daily n
 
 - Go to any **daily note**.
 - Create new daily notes for days that don't have one. (This is helpful for when you need to backfill old notes or if you're planning ahead for future notes! This will use your current **daily note** template!)
-- Visualize your writing. Each day includes a meter to approximate how much you've written that day.
+- See what's left to do. A dot marks each day that still has unfinished tasks, counting tasks written in that day's note and tasks elsewhere that link to it.
 - Use **Weekly notes** for an added organization layer! They work just like daily notes, but have their own customization options.
 
 ## Settings
 
 - **Start week on [default: locale]**: Configure the Calendar view to show Sunday or Monday as the first day of the week. Choosing 'locale' will set the start day to be whatever is the default for your chosen locale (`Settings > About > Language`)
-- **Words per Dot [default: 250]**: Starting in version 1.3, dots reflect the word count of your files. By default, each dot represents 250 words, you can change that value to whatever you want. Set this to `0` to disable the word count entirely. **Note:** There is a max of 5 dots so that the view doesn't get too big!
 - **Confirm before creating new note [default: on]**: If you don't like that a modal prompts you before creating a new daily note, you can turn it off.
 - **Show Week Number [default: off]**: Enable this to add a new column to the calendar view showing the [Week Number](https://en.wikipedia.org/wiki/Week#Week_numbering). Clicking on these cells will open your **weekly note**.
 
@@ -82,9 +81,14 @@ You can install the plugin via the Community Plugins tab within Obsidian. Just s
 
 ### What do the dots mean?
 
-Each solid dot represents 250 words in your daily note. So 4 dots means you've written a thousands words for that day! If you want to change that threshold, you can set a different value for "Words Per Dot" in the Calendar settings.
+A dot means the day still has unfinished tasks. A task counts toward a day if it's either:
 
-The hollow dots, on the other hand, mean that the day has incomplete tasks in it. (**Note:** There will only ever be 1 hollow dot on a particular day, regardless of the number of remaining tasks)
+- an unchecked task in that day's note, or
+- an unchecked task in any other note that links to that day, e.g. `- [ ] call Sam [[2026-09-30]]` in a project note.
+
+The dot appears even if the day's note doesn't exist yet, so you can plan tasks ahead. Tasks marked done (`[x]`) or cancelled (`[-]`) don't count. Any other status, such as in progress (`[/]`), does. There's only ever one dot per day, however many tasks remain. Weekly notes work the same way.
+
+(Earlier versions also showed word-count dots. Calendar Revived removed them in 1.7.0.)
 
 ### How do I change the styling of the Calendar?
 
