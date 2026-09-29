@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  obsidian-daily-notes-interface@0.9.5:
+    hash: 4bd64692be92fe5c3d50e25c97dc22a23882df32832053b33cb3bcd235ad3aca
+    path: patches/obsidian-daily-notes-interface@0.9.5.patch
+
 importers:
 
   .:
@@ -16,7 +21,7 @@ importers:
         version: 0.3.12
       obsidian-daily-notes-interface:
         specifier: 0.9.5
-        version: 0.9.5(obsidian@1.13.1)
+        version: 0.9.5(patch_hash=4bd64692be92fe5c3d50e25c97dc22a23882df32832053b33cb3bcd235ad3aca)(obsidian@1.13.1)
       svelte:
         specifier: 4.2.20
         version: 4.2.20
@@ -2522,7 +2527,7 @@ snapshots:
       - '@codemirror/state'
       - '@codemirror/view'
 
-  obsidian-daily-notes-interface@0.9.5(obsidian@1.13.1):
+  obsidian-daily-notes-interface@0.9.5(patch_hash=4bd64692be92fe5c3d50e25c97dc22a23882df32832053b33cb3bcd235ad3aca)(obsidian@1.13.1):
     dependencies:
       obsidian: 1.13.1
       tslib: 2.5.0

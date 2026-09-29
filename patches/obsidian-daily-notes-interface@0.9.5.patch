@@ -1,0 +1,44 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index 582df88c2463a93e15671883ca94115aad3e0d47..a9f964113dab6dfcd7214d5b84f5b7b8c7061b44 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -46,7 +46,7 @@ function getDailyNoteSettings() {
+ function getWeeklyNoteSettings() {
+ 	try {
+ 		const pluginManager = window.app.plugins;
+-		const calendarSettings = pluginManager.getPlugin("calendar")?.options;
++		const calendarSettings = pluginManager.getPlugin("calendar-revived")?.options;
+ 		const periodicNotesSettings = pluginManager.getPlugin("periodic-notes")?.settings?.weekly;
+ 		if (shouldUsePeriodicNotesSettings("weekly") && periodicNotesSettings) return {
+ 			format: periodicNotesSettings.format || "gggg-[W]ww",
+@@ -523,7 +523,7 @@ function appHasDailyNotesPluginLoaded() {
+ */
+ function appHasWeeklyNotesPluginLoaded() {
+ 	const { app } = window;
+-	if (app.plugins.getPlugin("calendar")) return true;
++	if (app.plugins.getPlugin("calendar-revived")) return true;
+ 	return !!app.plugins.getPlugin("periodic-notes")?.settings?.weekly?.enabled;
+ }
+ function appHasMonthlyNotesPluginLoaded() {
+diff --git a/dist/index.mjs b/dist/index.mjs
+index f991d9b110610aba14edbe33c2a210adad31f656..45f62380ad85cdd81d8134241e6a73babd2162d0 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -45,7 +45,7 @@ function getDailyNoteSettings() {
+ function getWeeklyNoteSettings() {
+ 	try {
+ 		const pluginManager = window.app.plugins;
+-		const calendarSettings = pluginManager.getPlugin("calendar")?.options;
++		const calendarSettings = pluginManager.getPlugin("calendar-revived")?.options;
+ 		const periodicNotesSettings = pluginManager.getPlugin("periodic-notes")?.settings?.weekly;
+ 		if (shouldUsePeriodicNotesSettings("weekly") && periodicNotesSettings) return {
+ 			format: periodicNotesSettings.format || "gggg-[W]ww",
+@@ -522,7 +522,7 @@ function appHasDailyNotesPluginLoaded() {
+ */
+ function appHasWeeklyNotesPluginLoaded() {
+ 	const { app } = window;
+-	if (app.plugins.getPlugin("calendar")) return true;
++	if (app.plugins.getPlugin("calendar-revived")) return true;
+ 	return !!app.plugins.getPlugin("periodic-notes")?.settings?.weekly?.enabled;
+ }
+ function appHasMonthlyNotesPluginLoaded() {

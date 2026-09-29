@@ -1,0 +1,2 @@
+patchedDependencies:
+  obsidian-daily-notes-interface@0.9.5: patches/obsidian-daily-notes-interface@0.9.5.patch
