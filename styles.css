@@ -9,3 +9,9 @@
 .settings-banner h4 {
   margin: 0;
 }
+
+/* Other plugins sometimes style every <table> globally (e.g. a left margin),
+   which shifts the calendar grid and pushes it past the pane's right edge. */
+.workspace-leaf-content[data-type="calendar-revived"] #calendar-container table.calendar {
+  margin: 0;
+}
