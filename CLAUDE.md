@@ -27,7 +27,8 @@ CI (`.github/workflows/main.yml`, Node 22) runs lint, test and build on every pu
 - `src/view.ts`: `CalendarView` (an `ItemView`). It mounts the Svelte component, handles vault and workspace events, and opens or creates notes.
 - `src/ui/Calendar.svelte`: a wrapper around `obsidian-calendar-ui`'s `Calendar` component.
 - `src/ui/stores.ts`: Svelte stores for settings, the daily and weekly note indexes, and the active file.
-- `src/ui/sources/`: the dot and tag sources (word count, tasks, tags, streak). Other plugins can add sources through the `calendar:open` workspace event.
+- `src/ui/sources/`: the dot and tag sources (tasks, tags, streak). Other plugins can add sources through the `calendar:open` workspace event.
+- `src/ui/taskIndex.ts`: counts unfinished tasks per day/week (see below). The tasks source shows one dot when the count is above 0.
 - `src/io/`: creating daily and weekly notes, with an optional confirmation modal.
 - Tests sit next to their sources as `*.test.ts`. Test helpers are in `src/testUtils/`, and the `obsidian` stub is `src/ui/__mocks__/obsidian.ts`.
 
@@ -51,6 +52,8 @@ CI (`.github/workflows/main.yml`, Node 22) runs lint, test and build on every pu
   - Obsidian's page-preview settings decide whether the modifier key is needed, based on the source registered in `main.ts`.
 - **Clean up everything a view registers.** Wrap store subscriptions and DOM listeners in `this.register(...)`, `registerEvent` or `registerDomEvent`, so they're removed when the view closes. A subscription left behind on a closed view once broke settings updates.
 - **Don't detach leaves in `onunload`**, per Obsidian's plugin guidelines.
+- **Task dots come from `TaskIndex`, not file reads.** A day's count is its note's unfinished tasks plus unfinished tasks in any note that link to it (the day's note needn't exist). Only `[x]`, `[X]` and `[-]` count as finished. It's built from the metadata cache and updated per file on metadata `changed`, vault `delete` and `rename`. Refresh on metadata `changed`, not vault `modify`: `modify` fires before the cache is updated.
+- **There are no word-count dots.** They were removed in favor of the single task dot, partly because many dots per day wrapped and widened cells, which made the grid resize after the dots loaded. Keep at most one dot per day.
 - **Keep the identifiers distinct from the original plugin:** the view type is `"calendar-revived"`, so both plugins can be installed at once. Keep the `calendar:open` event name unchanged, because other plugins listen for it.
 - **Match the existing style:** 2-space indent, double quotes, trailing commas, lines of about 80 characters. There's no Prettier config, so follow the surrounding code.
 - **Commit messages:** an imperative subject line, then a body explaining *why*. Split changes into commits by concern, and commit straight to `main`.
@@ -61,6 +64,7 @@ CI (`.github/workflows/main.yml`, Node 22) runs lint, test and build on every pu
 - **`obsidian-daily-notes-interface` types say `getDailyNote` and `getWeeklyNote` return `TFile`,** but they return `null` when no note exists. Tests use `null as unknown as TFile` for that case.
 - **The test `App` stub (`src/testUtils/mockApp.ts`) is cast with `as unknown as App`.** It's deliberately partial.
 - **Don't add `baseUrl` back to `tsconfig.json`.** It's deprecated. The `paths` entry `"src/*": ["./src/*"]` handles `src/...` imports.
+- **`patches/obsidian-daily-notes-interface@0.9.5.patch` is required.** The library reads weekly-note settings from `app.plugins.getPlugin("calendar")`, a hard-coded id. The patch points it at `"calendar-revived"`. Without it, weekly-note format, folder and template settings are silently ignored. `src/io/weeklyNoteSettings.test.ts` fails if the patch stops applying. If you upgrade that dependency, redo the patch with `pnpm patch`.
 - **The bundle contains two Svelte runtimes.** Ours is Svelte 4, and `obsidian-calendar-ui` ships its own precompiled copy of Svelte 3. That's expected.
 
 ## Version ceilings (checked 2026-09; don't re-investigate without new information)
